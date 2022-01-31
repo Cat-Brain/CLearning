@@ -50,8 +50,7 @@ int error = 0;
 
 Texture brickTex;
 
-framebuffer2 FB;
-framebuffer FB2, FBRENDER;
+framebuffer FB, FB2;
 
 bool restart;
 
@@ -90,9 +89,8 @@ void Start()
 	CreateBasicShaders();
 	CreateBasicMeshes();
 
-	CreateFramebuffer2(&FB);
+	CreateFramebuffer(&FB);
 	CreateFramebuffer(&FB2);
-	CreateFramebuffer(&FBRENDER);
 
 	//char brickTexLocation[] = "Resources/Textures/Images/Brick.jpg";
 	//brickTex = GenTexture(brickTexLocation, sizeof(brickTexLocation) / sizeof(char), GL_NEAREST, GL_REPEAT);
@@ -218,7 +216,7 @@ void Update()
 
 	#pragma region rendering
 
-	SetBasicUniforms(player.camera, /*0.0f*/0.75f);
+	SetBasicUniforms(player.camera, /*0.0f*/3.0f);
 	
 
 	UpdateWorld(&world, player.camera, chunkRenderDist);
@@ -238,9 +236,8 @@ void Update()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glDisable(GL_DEPTH_TEST);
-	RenderFramebuffer21(FB, FBRENDER, RENDER_SHADER);
 
-	RenderFramebuffer11(FBRENDER, FB2, POST_PROCESSING_SHADER);
+	RenderFramebuffer11(FB, FB2, POST_PROCESSING_SHADER);
 
 
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);

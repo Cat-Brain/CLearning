@@ -267,77 +267,38 @@ const char DIFF2_VERT[] =
 
 const char DEFAULT_DIFF_FRAG[] =
 "#version 330 core\n"
-"layout(location = 0) out vec4 gPosition;\n"
-"layout(location = 1) out vec4 gNormal;\n"
-"layout(location = 2) out vec4 gAlbedoSpec;\n"
+"out vec4 FragColor;\n"
 "\n"
 "in vec3 color;\n"
 "in vec3 fragPos;\n"
 "in vec3 normal;\n"
 "\n"
-"void main()\n"
-"{\n"
-"	// store the fragment position vector in the first gbuffer texture\n"
-"	gPosition = vec4(fragPos, 1.0);\n"
-"	// also store the per-fragment normals into the gbuffer\n"
-"	gNormal = vec4(normalize(normal), 1.0);\n"
-"	// and the diffuse per-fragment color\n"
-"	gAlbedoSpec.rgb = vec3(1.0, 1.0, 1.0);\n"
-"	// store specular intensity in gAlbedoSpec's alpha component\n"
-"	gAlbedoSpec.a = 1.0;\n"
-"}\0";
-
-const char RENDER_VERT_SHADER[] =
-"#version 330 core\n"
-"layout(location = 0) in vec2 aPos;\n"
-"layout(location = 1) in vec2 aUV;\n"
-"\n"
-"out vec2 uv;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	uv = aUV;\n"
-"	gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
-"}\0";
-
-const char RENDER_FRAG_SHADER[] =
-"#version 330 core\n"
-"out vec4 FragColor;\n"
-"\n"
-"in vec2 uv;\n"
-"\n"
-"uniform sampler2D gPosition;\n"
-"uniform sampler2D gNormal;\n"
-"uniform sampler2D gAlbedoSpec;\n"
-"\n"
 "struct Light {\n"
-"	vec3 Position;\n"
-"	vec3 Color;\n"
+"	vec3 pos;\n"
+"	vec3 color;\n"
 "};\n"
 "const int NR_LIGHTS = 1;\n"
 "uniform Light lights[NR_LIGHTS];\n"
 "uniform vec3 viewPos;\n"
+"uniform float ambient, diff, spec, quadraticAttenuation;"
 "\n"
 "void main()\n"
 "{\n"
-"	// retrieve data from G-buffer\n"
-"	vec3 FragPos = texture(gPosition, uv).rgb;\n"
-"	vec3 Normal = texture(gNormal, uv).rgb;\n"
-"	vec4 AlbedoSpec = texture(gAlbedoSpec, uv);\n"
 "\n"
-"	/*// then calculate lighting as usual\n"
-"	vec3 lighting = AlbedoSpec.rgb * 0.1; // hard-coded ambient component\n"
-"	vec3 viewDir = normalize(viewPos - FragPos);\n"
-"	for (int i = 0; i < NR_LIGHTS; ++i)\n"
+"	// Calculate lighting.\n"
+"	vec3 lighting = color * ambient; // hard-coded ambient component\n"
+"	vec3 viewDir = normalize(viewPos - fragPos);\n"
+"	for (int i = 0; i < NR_LIGHTS; i++)\n"
 "	{\n"
 "		// diffuse\n"
-"		vec3 lightDir = normalize(viewPos - FragPos);\n"
-"		vec3 diffuse = max(dot(Normal, lightDir), 0.0) * AlbedoSpec.rgb * vec3(1.0, 1.0, 1.0);\n"
+"		vec3 lightDir = fragPos - lights[i].pos;\n"
+"		float attenuation = 1.0 / dot(lightDir, lightDir) * quadraticAttenuation * quadraticAttenuation;\n"
+"		lightDir = normalize(lightDir);\n"
+"		vec3 diffuse = max(dot(normal, lightDir), 0.0) * color * diff * attenuation;\n"
 "		lighting += diffuse;\n"
 "	}\n"
 "\n"
-"	FragColor = vec4(lighting, 1.0);*/\n"
-"	FragColor = vec4(AlbedoSpec.ra, FragPos.r, 1.0);\n"
+"	FragColor = vec4(lighting, 1.0);\n"
 "}\0";
 
 
@@ -353,7 +314,6 @@ Shader TEXTURE_DIFFUSE_SHADER;
 Shader FBO_SHADER;
 Shader POST_PROCESSING_SHADER;
 Shader SKYBOX_SHADER;
-Shader RENDER_SHADER;
 
 void CreateBasicShaders()
 {
@@ -367,20 +327,19 @@ void CreateBasicShaders()
 	FBO_SHADER = CreateShader2(FBO_VERT_SHADER, FBO_FRAG_SHADER);
 	POST_PROCESSING_SHADER = CreateShader2(POST_VERT_SHADER, POST_FRAG_SHADER);
 	SKYBOX_SHADER = CreateShader2(SKYBOX_VERT_SHADER, SKYBOX_FRAG_SHADER);
-	RENDER_SHADER = CreateShader2(RENDER_VERT_SHADER, RENDER_FRAG_SHADER);
 }
 
 void SetBasicUniforms(Camera camera, float quadraticAttenuation)
 {
-	glUseProgram(RENDER_SHADER);
-	glUniform3f(glGetUniformLocation(RENDER_SHADER, "lightPos"), camera.pos[0], camera.pos[1], camera.pos[2]);
-	glUniform3f(glGetUniformLocation(RENDER_SHADER, "viewPos"), camera.pos[0], camera.pos[1], camera.pos[2]);
+	glUseProgram(DIFF2_SHADER);
+	glUniform3f(glGetUniformLocation(DIFF2_SHADER, "lights[0].pos"), camera.pos[0], camera.pos[1], camera.pos[2]);
+	glUniform3f(glGetUniformLocation(DIFF2_SHADER, "viewPos"), camera.pos[0], camera.pos[1], camera.pos[2]);
 
-	glUniform1f(glGetUniformLocation(RENDER_SHADER, "ambient"), 0.3f);
-	glUniform1f(glGetUniformLocation(RENDER_SHADER, "diffuse"), 1.0f);
-	glUniform1f(glGetUniformLocation(RENDER_SHADER, "specular"), 0.25f);
+	glUniform1f(glGetUniformLocation(DIFF2_SHADER, "ambient"), 0.0f);
+	glUniform1f(glGetUniformLocation(DIFF2_SHADER, "diff"), 1.0f);
+	glUniform1f(glGetUniformLocation(DIFF2_SHADER, "spec"), 0.25f);
 
-	glUniform1f(glGetUniformLocation(RENDER_SHADER, "quadratic"), quadraticAttenuation);
+	glUniform1f(glGetUniformLocation(DIFF2_SHADER, "quadraticAttenuation"), quadraticAttenuation);
 
 	glUseProgram(POST_PROCESSING_SHADER);
 	glUniform1f(glGetUniformLocation(POST_PROCESSING_SHADER, "intensity"), 0.5f);

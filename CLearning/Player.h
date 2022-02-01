@@ -4,20 +4,18 @@
 void CreatePlayer(Player* player)
 {
 	CreateCamera(&player->camera);
+	player->collider.pos[1] = 50.0f;
 	player->data.moveSpeed = 0.05f;
 	player->data.slowDown = 1.0f - 0.75f;
 	player->data.jumpForce = 0.05f;
 	player->data.jumpDelay = 0.1f;
 	player->data.jumpGroundOffset = 0.3f;
 	player->data.gravity = 0.05f;
-	player->data.grappleDist = 100.0f;
-	player->data.grappleStrength = 0.25f;
-	player->data.grappleMoveMul = 0.25f;
 
 	player->data.legRange = 0.5f;
 
 	player->collider.radius = 0.5f;
-	player->collider.bounciness = 0.25f;
+	player->collider.bounciness = 0.5f;
 }
 
 void MovePlayer(Player* player, vec3 input)

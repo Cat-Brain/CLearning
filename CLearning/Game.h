@@ -365,29 +365,7 @@ void processInput(float deltaTime)
 		}
 		else
 		{
-			if (player.data.grappling && !glm_vec3_eqv((vec3) { 0.0f, 0.0f, 0.0f }, player.data.grappleHit.norm))
-			{
-				/*vec3 grapple;
-				glm_vec3_sub(player.data.grappleHit.pos, player.collider.pos, grapple);
-				float dist = glm_vec3_distance(grapple, (vec3) { 0.0f, 0.0f, 0.0f });
-
-				float grappleMul = dist / player.data.grappleHit.dist;
-				grappleMul = grappleMul / (grappleMul + 1) - 0.4f;
-
-				glm_vec3_scale(grapple, player.data.grappleStrength * grappleMul * deltaTime / dist, grapple);
-
-				glm_vec3_add(grapple, player.collider.velocity, player.collider.velocity);*/
-				isGrappling = true;
-			}
-			else
-			{
-				/*player.data.grappleHit = RaycastWorld(player.collider.pos, player.camera.forward, player.data.grappleDist, world);
-				player.data.grappling = true;
-				printf("(%f, %f, %f), ", player.data.grappleHit.pos[0], player.data.grappleHit.pos[1], player.data.grappleHit.pos[2]);
-				glm_mat4_identity(webHitObject.transform);
-				glm_translate(webHitObject.transform, player.data.grappleHit.pos);*/
-				isGrappling = true;
-			}
+			// Do stuff like double jumping here. =)
 		}
 	}
 	else if (player.data.nearWall)
@@ -395,9 +373,10 @@ void processInput(float deltaTime)
 		vec3 scaledVel;
 		glm_vec3_scale(player.collider.velocity, player.data.slowDown, scaledVel);
 		glm_vec3_lerp(player.collider.velocity, scaledVel, deltaTime, player.collider.velocity);
-		player.data.grappling = false;
 	}
-	else player.data.grappling = false;
+	else
+	{
+	}
 	spaceLastFrame = spaceThisFrame;
 
 	vec3 camMovement;

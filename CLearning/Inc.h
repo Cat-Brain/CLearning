@@ -178,16 +178,11 @@ typedef struct PlayerData
 	float jumpDelay;
 	float jumpGroundOffset;
 	float gravity;
-	float grappleDist;
-	float grappleStrength;
-	float grappleMoveMul;
 	float legRange;
 
 	bool grounded;
 	bool grappling;
 	bool nearWall;
-
-	RaycastHit grappleHit;
 } PlayerData;
 
 typedef struct Player

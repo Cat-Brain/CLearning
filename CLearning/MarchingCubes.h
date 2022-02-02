@@ -521,6 +521,7 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
 						GenerateChunkMesh(&world->chunks.l[world->chunks.count - 1]);
+						return;
 						//printf("%i, ", world->chunks.count);
 					}
 				}

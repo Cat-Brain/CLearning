@@ -4,7 +4,7 @@
 void CreatePlayer(Player* player)
 {
 	CreateCamera(&player->camera);
-	player->collider.pos[1] = 50.0f;
+	player->collider.pos[1] = 100.0f;
 	player->data.moveSpeed = 0.05f;
 	player->data.slowDown = 1.0f - 0.75f;
 	player->data.jumpForce = 0.05f;

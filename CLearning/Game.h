@@ -431,6 +431,13 @@ void processInput(float deltaTime)
 	if (!player.data.nearWall) player.collider.velocity[1] -= player.data.gravity * deltaTime;
 
 	MovePlayer(&player, camMovement);
+
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+	{
+		player.collider.pos[0] = 0.0f;
+		player.collider.pos[1] = 100.0f;
+		player.collider.pos[2] = 0.0f;
+	}
 }
 
 void MultiplayerInit()

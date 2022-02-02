@@ -107,14 +107,14 @@ bool SphereTriangleCollision(SphereCollider* s, Vertex vertices[3])
 	glm_vec3_scale(vertices[0].normal, dist, n);
 	glm_vec3_add(n, s->pos, s->pos);
 
-	vec3 vel1, vel2;
+	/*vec3 vel1, vel2;
 
-	/*vec3 mul;
+	vec3 mul;
 	glm_vec3_one(mul);
 	vec3 nAbs;
 	glm_vec3_abs(vertices[0].normal, nAbs);
 	glm_vec3_sub(mul, nAbs, mul);
-	glm_vec3_mul(s->velocity, mul, s->velocity);*/
+	glm_vec3_mul(s->velocity, mul, vel1);*/
 
 	vec3 v;
 	glm_vec3_one(v);
@@ -122,9 +122,8 @@ bool SphereTriangleCollision(SphereCollider* s, Vertex vertices[3])
 	glm_vec3_mul(vertices[0].normal, v, v);
 	glm_vec3_scale(v, 2 * s->bounciness, v);
 
-	glm_vec3_sub(s->velocity, v, vel2);
-
-	glm_vec3_copy(vel2, s->velocity);
+	//glm_vec3_sub(s->velocity, v, vel2);
+	glm_vec3_sub(s->velocity, v, s->velocity);
 	
 	//glm_vec3_lerp(vel1, vel2, s->bounciness, s->velocity);
 

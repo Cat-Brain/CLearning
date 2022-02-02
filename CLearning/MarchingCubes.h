@@ -422,7 +422,7 @@ void GenerateChunk(Chunk* chunk, CaveNoise c)
 		for (int y = 0; y < (chunkWidth + 1); y++)
 			for (int z = 0; z < (chunkWidth + 1); z++)
 			{
-				chunk->tiles[x][y][z]     = max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) + (((float)y / chunkWidth) + chunk->pos[1]) / 10.0f));
+				chunk->tiles[x][y][z]     = max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) + max(-0.625f, min(0.75f, (((float)y / chunkWidth) + chunk->pos[1]) / 10.0f)) - GenerateCaveNoiseValue(c, 0.0375f, 4, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
 				chunk->colors[x][y][z][0] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 1, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
 				chunk->colors[x][y][z][1] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 2, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
 				chunk->colors[x][y][z][2] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 3, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
@@ -521,6 +521,7 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
 						GenerateChunkMesh(&world->chunks.l[world->chunks.count - 1]);
+						return;
 						//printf("%i, ", world->chunks.count);
 					}
 				}

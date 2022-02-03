@@ -2,9 +2,7 @@
 
 #include "Framebuffer.h"
 
-float intensity = 2.0f;
-
-float GenerateCaveNoiseValue(CaveNoise c/*, uint8_t index*/, float frequency, byte offset, byte steps, vec3 p)
+float GenerateCaveNoiseValue(CaveNoise c/*, uint8_t index*/, float frequency, float bias, byte offset, byte steps, vec3 p)
 {
 	c.noise.seed += offset;
 	c.noise.frequency = frequency;
@@ -28,9 +26,9 @@ float GenerateCaveNoiseValue(CaveNoise c/*, uint8_t index*/, float frequency, by
 	value *= 0.5f;
 	value += 0.5f;
 
-	value *= intensity;
-	value = value / (value + 1);
+	value = BiasEquation(value, bias);
+
 	//printf("%f, ", value);
 
-	return value;
+	return max(0, min(1, value));
 }

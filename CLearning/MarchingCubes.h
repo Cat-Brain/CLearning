@@ -417,15 +417,17 @@ Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 
 void GenerateChunk(Chunk* chunk, CaveNoise c)
 {
 	//float _min = 0.0f, _max = 0.0f, average = 0.0f;
+	float height;
 
 	for (int x = 0; x < (chunkWidth + 1); x++)
 		for (int y = 0; y < (chunkWidth + 1); y++)
 			for (int z = 0; z < (chunkWidth + 1); z++)
 			{
-				chunk->tiles[x][y][z]     = max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) + max(-0.625f, min(0.75f, (((float)y / chunkWidth) + chunk->pos[1]) / 10.0f)) - GenerateCaveNoiseValue(c, 0.0375f, 4, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][0] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 1, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][1] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 2, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][2] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 3, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+				height = -(((float)y / chunkWidth) + chunk->pos[1]);
+				chunk->tiles[x][y][z]     = max(0, min(1, max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0.0f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) - height / 10.0f)) + GenerateCaveNoiseValue(c, 0.0125f, max(0, glm_signf(-height + 1) * (-height / (-height + 1))), 4, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+				chunk->colors[x][y][z][0] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 1, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+				chunk->colors[x][y][z][1] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 2, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+				chunk->colors[x][y][z][2] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 3, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
 				//_min = min(_min, chunk->tiles[x][y][z]);
 				//_max = max(_max, chunk->tiles[x][y][z]);
 				//average += chunk->tiles[x][y][z];
@@ -434,6 +436,7 @@ void GenerateChunk(Chunk* chunk, CaveNoise c)
 	//average /= (chunkWidth + 1) * (chunkWidth + 1) * (chunkWidth + 1);
 	//printf("%f, ", average);
 	//printf("(%f, %f, %f)", min, max, average);
+	//printf("%f, ", height);
 }
 
 void CreateWorld(World* world, Camera camera, float chunkRenderDist)

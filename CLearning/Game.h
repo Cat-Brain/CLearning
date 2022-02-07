@@ -264,6 +264,12 @@ void End()
 	free(world.chunks.l);
 	world.chunks.l = 0;
 	world.chunks.count = 0;
+
+	clReleaseKernel(world.kernel);
+	clReleaseProgram(world.program);
+	clReleaseMemObject(world.mem_obj);
+	clReleaseCommandQueue(world.queue);
+	clReleaseContext(world.context);
 }
 
 int Run()

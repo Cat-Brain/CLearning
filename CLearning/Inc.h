@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#define CL_TARGET_OPENCL_VERSION 120
+#include <CL/opencl.h>
 #define FNL_IMPL
 #include <FastNoiseLite/FastNoiseLite.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -150,7 +152,6 @@ typedef struct HelperVec
 
 typedef struct HelperCube
 {
-	byte index;
 	Vertex verts[12];
 } HelperCube;
 
@@ -232,6 +233,7 @@ typedef struct UMesh
 typedef struct Chunk
 {
 	ivec3 pos;
+	byte indices[chunkWidth][chunkWidth][chunkWidth];
 	float tiles[chunkWidth + 1][chunkWidth + 1][chunkWidth + 1];
 	vec3 colors[chunkWidth + 1][chunkWidth + 1][chunkWidth + 1];
 	VertexList verts;
@@ -252,4 +254,9 @@ typedef struct World
 {
 	ChunkList chunks;
 	CaveNoise noise;
+	cl_mem memObjWorld, memObjOffset;
+	cl_kernel kernel;
+	cl_command_queue queue;
+	cl_context context;
+	cl_program program;
 } World;

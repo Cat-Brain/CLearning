@@ -217,6 +217,14 @@ typedef struct TriList
 	unsigned int count;
 } TriList;
 
+
+typedef struct VertexListList
+{
+	Vertex* l;
+	UIntList offsets;
+	uint total;
+} VertexListList;
+
 #pragma endregion
 
 

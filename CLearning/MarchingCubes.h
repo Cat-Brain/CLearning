@@ -449,47 +449,46 @@ int8_t triTable[256][16] =
 	{
 		// Prepare for multithreading:
 		// Setup OpenCL.
+		int temp = 0;
 		cl_device_id device;
 		cl_platform_id platform = NULL;
 		cl_uint ret_num_devices;
 		cl_uint ret_num_platforms;
 		cl_int ret = clGetPlatformIDs(1, &platform, &ret_num_platforms);
+		printf("0, ");
 		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &ret_num_devices);
+		printf("1, ");
 		world->context = clCreateContext(NULL, 1, &device, NULL, NULL, &ret);
+		printf("2, ");
 		world->queue = clCreateCommandQueueWithProperties(world->context, device, (cl_queue_properties)0, NULL);
-
-		// Create memory buffers on the device for each vector.
-		world->memObjWorld = clCreateBuffer(world->context, CL_MEM_READ_WRITE, sizeof(World), NULL, &ret);
-		world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(unsigned int), NULL, &ret);
-
-		// Copy the world into it's respective place.
-		ret = clEnqueueWriteBuffer(world->queue, world->memObjWorld, CL_TRUE, 0, sizeof(World), world, 0, NULL, NULL);
-		unsigned int zero = 0;
-		ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &zero, 0, NULL, NULL);
+		printf("3, ");
 
 		// Load the kernel source code into the array source_str.
 		FILE* fp;
 		char* source;
 		size_t source_size;
 
-		fp = fopen("kernels/MarchingCubes.txt", "r");
-		if (!fp) {
+		errno_t error = fopen_s(&fp, "kernels/MarchingCubes.txt", "r");
+		if (error != 0) {
 			fprintf(stderr, "Failed to load kernel.\n");
 			exit(1);
 		}
+		printf("4, ");
 		#define MAX_SOURCE_SIZE (0x11111111)
 		source = (char*)malloc(MAX_SOURCE_SIZE);
+		printf("5, ");
 		source_size = fread(source, 1, MAX_SOURCE_SIZE, fp);
+		printf("6, ");
 		fclose(fp);
+		printf("7, ");
 
 		// Compile the kernel.
-		world->program = clCreateProgramWithSource(world->context, 1, (const char**)&source, NULL, NULL);
-		clBuildProgram(world->program, 0, NULL, NULL, NULL, NULL);
+		world->program = clCreateProgramWithSource(world->context, 1, (const char**)&source, (const size_t*)&source_size, &ret);
+		printf("8, ");
+		clBuildProgram(world->program, 1, device, NULL, NULL, NULL);
+		printf("9, ");
 		world->kernel = clCreateKernel(world->program, "GenerateChunkMesh", NULL);
-
-		// Set the arguments of the kernel
-		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjWorld);
-		ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
+		printf("10, ");
 
 			// Do actual marching cubes stuff now:
 		vec3 localizedCamPos;
@@ -519,22 +518,49 @@ int8_t triTable[256][16] =
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
 						GenerateChunkMesh1(&world->chunks.l[world->chunks.count - 1]);
+						//GenerateChunkMesh2(&world->chunks.l[world->chunks.count - 1]);
 					}
+
+		// Create memory buffers on the device for each vector.
+		printf("0, ");
+		world->memObjWorld = clCreateBuffer(world->context, CL_MEM_READ_WRITE, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+
+		world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(unsigned int), NULL, &ret);
+
+		printf("1, ");
 
 		size_t global_dimensions[] = { world->chunks.count, 0, 0 };
 
-		clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, NULL, 0, NULL, NULL);
+		// Copy the world into it's respective place.
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjWorld, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+		printf("2, ");
+		unsigned int zero = 0;
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &zero, 0, NULL, NULL);
+		printf("3, ");
 
-		// Read back the results.
+		// Set the arguments of the kernel
+		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjWorld);
+		printf("4, ");
+		ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
+		printf("5, ");
+
+		size_t local_dimensions = 64;
+		clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
+		printf("6, ");
 		ret = clEnqueueReadBuffer(world->queue, world->memObjWorld, CL_TRUE, 0,
-			sizeof(World), world, 0, NULL, NULL);
-
+			sizeof(Chunk) * world->chunks.count, world->chunks.l, 0, NULL, NULL);
+		printf("7, ");
 		ret = clFlush(world->queue);
+		printf("8, ");
 		ret = clFinish(world->queue);
+
+		for (int i = 0; i < world->chunks.count; i++)
+			world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
 	}
 
 void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 {
+	//printf("!");
 	int i = 0;
 
 	#pragma region Delete out of range chunks
@@ -567,6 +593,8 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 	maxPos[1] = roundf(localizedCamPos[1] + chunkRenderDist);
 	maxPos[2] = roundf(localizedCamPos[2] + chunkRenderDist);
 
+	int chunkMultithreadOffset = world->chunks.count - 1;
+
 	//int i = 0;
 	for (int x = minPos[0]; x <= maxPos[0]; x++)
 		for (int y = minPos[1]; y <= maxPos[1]; y++)
@@ -585,10 +613,55 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 						world->chunks.l[world->chunks.count - 1].pos[1] = y;
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
-						GenerateChunkMesh(&world->chunks.l[world->chunks.count - 1]);
-						return;
+						GenerateChunkMesh1(&world->chunks.l[world->chunks.count - 1]);
+						//return;
 						//printf("%i, ", world->chunks.count);
 					}
 				}
+
+	int ret;
+
+	printf("0, ");
+	clReleaseMemObject(world->memObjWorld);
+	world->memObjWorld = clCreateBuffer(world->context, CL_MEM_READ_WRITE, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+
+	clReleaseMemObject(world->memObjOffset);
+	world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(unsigned int), NULL, &ret);
+
+	printf("1, ");
+
+	size_t global_dimensions[] = { world->chunks.count - chunkMultithreadOffset, 0, 0 };
+
+	// Copy the world into it's respective place.
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjWorld, CL_TRUE, 0, (world->chunks.count - chunkMultithreadOffset) * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+	printf("2, ");
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &chunkMultithreadOffset, 0, NULL, NULL);
+	printf("3, ");
+
+	// Set the arguments of the kernel
+	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjWorld);
+	printf("4, ");
+	ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
+	printf("5, ");
+
+	size_t local_dimensions = 64;
+	clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
+	printf("6, ");
+	ret = clEnqueueReadBuffer(world->queue, world->memObjWorld, CL_TRUE, 0,
+		sizeof(Chunk) * world->chunks.count, world->chunks.l, 0, NULL, NULL);
+	printf("7, ");
+
+	ret = clFlush(world->queue);
+	printf("8, ");
+	ret = clFinish(world->queue);
+	printf("9, ");
+
+	for (int i = chunkMultithreadOffset; i < (world->chunks.count - chunkMultithreadOffset); i++)
+	{
+		DestroyMesh2(world->chunks.l[i].mesh);
+		world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
+	}
+
+
 	#pragma endregion
 }

@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#define CL_TARGET_OPENCL_VERSION 120
+#include <CL/opencl.h>
 #define FNL_IMPL
 #include <FastNoiseLite/FastNoiseLite.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -29,6 +31,7 @@ bool wireframe = false;
 
 
 typedef uint8_t byte;
+typedef unsigned int uint;
 
 
 typedef struct Vec3
@@ -37,7 +40,7 @@ typedef struct Vec3
 } Vec3;
 
 
-typedef struct
+typedef struct var
 {
 	void* p;
 	unsigned short varSize;
@@ -48,14 +51,26 @@ typedef struct List
 {
 	void* l;
 	unsigned int varSize;
-	unsigned int count;
+	uint count;
 } List;
 
 typedef struct VoidList
 {
 	void** l;
-	unsigned int count;
+	uint count;
 } VoidList;
+
+typedef struct UIntList
+{
+	uint* l;
+	uint count;
+} UIntList;
+
+typedef struct IntList
+{
+	int* l;
+	uint count;
+} IntList;
 
 
 typedef unsigned int Texture;
@@ -150,7 +165,6 @@ typedef struct HelperVec
 
 typedef struct HelperCube
 {
-	byte index;
 	Vertex verts[12];
 } HelperCube;
 
@@ -216,6 +230,13 @@ typedef struct TriList
 	unsigned int count;
 } TriList;
 
+
+typedef struct VertexListList
+{
+	Vertex* l;
+	UIntList offsets;
+} VertexListList;
+
 #pragma endregion
 
 
@@ -232,9 +253,9 @@ typedef struct UMesh
 typedef struct Chunk
 {
 	ivec3 pos;
+	byte indices[chunkWidth][chunkWidth][chunkWidth];
 	float tiles[chunkWidth + 1][chunkWidth + 1][chunkWidth + 1];
 	vec3 colors[chunkWidth + 1][chunkWidth + 1][chunkWidth + 1];
-	VertexList verts;
 	Mesh2 mesh;
 } Chunk;
 
@@ -244,6 +265,7 @@ typedef struct ChunkList
 {
 	Chunk* l;
 	unsigned int count;
+	VertexListList v;
 } ChunkList;
 
 // Struct that requires lists that require structs that require lists. Geez
@@ -252,4 +274,9 @@ typedef struct World
 {
 	ChunkList chunks;
 	CaveNoise noise;
+	cl_mem memObjChunks, memObjVerts, memObjOffset;
+	cl_kernel kernel;
+	cl_command_queue queue;
+	cl_context context;
+	cl_program program;
 } World;

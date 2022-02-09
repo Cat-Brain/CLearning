@@ -4,7 +4,7 @@
 void CreatePlayer(Player* player)
 {
 	CreateCamera(&player->camera);
-	player->collider.pos[1] = 100.0f;
+	player->collider.pos[1] = 0.0f;
 	player->data.moveSpeed = 0.05f;
 	player->data.slowDown = 1.0f - 0.75f;
 	player->data.jumpForce = 0.05f;
@@ -56,7 +56,7 @@ void UpdatePlayer(Player* player, World world)
 					chunkIndex = (glm_vec3_eqv((vec3) { x, y, z }, (vec3) { world.chunks.l[i].pos[0], world.chunks.l[i].pos[1], world.chunks.l[i].pos[2] }) ? i : chunkIndex);
 				if (chunkIndex == -1)
 				{
-					printf("(%i, %i, %i) : (%f, %f, %f), ", x, y, z, player->collider.pos[0], player->collider.pos[1], player->collider.pos[2]);
+					//printf("(%i, %i, %i) : (%f, %f, %f), ", x, y, z, player->collider.pos[0], player->collider.pos[1], player->collider.pos[2]);
 				}
 				else
 				{

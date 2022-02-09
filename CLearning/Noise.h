@@ -30,5 +30,5 @@ float GenerateCaveNoiseValue(CaveNoise c/*, uint8_t index*/, float frequency, fl
 
 	//printf("%f, ", value);
 
-	return max(0, min(1, value));
+	return value;
 }

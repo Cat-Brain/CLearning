@@ -258,221 +258,320 @@ int8_t triTable[256][16] =
 	{ 1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2 },
 	{ 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1 },
 	{ 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1 },
-	{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0 }};
+	{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0 }
+};
 
 
 	Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol);
 
-void GenerateChunkMesh(Chunk* chunk)
-{
-	int triCount = 0, activeVert = 0;
-
-	float currentValues[8];
-	vec3 currentColors[8];
-	vec3 currentPos;
-
-	HelperCube cubes[chunkWidth][chunkWidth][chunkWidth];
-
-	for (int x = 0; x < chunkWidth; x++)
-		for (int y = 0; y < chunkWidth; y++)
-			for (int z = 0; z < chunkWidth; z++)
-			{
-				cubes[x][y][z].index = 0;
-				if (chunk->tiles[x][y][z] >= isoLevel) cubes[x][y][z].index |= 1u;
-				if (chunk->tiles[x + 1][y][z] >= isoLevel) cubes[x][y][z].index |= 2u;
-				if (chunk->tiles[x + 1][y][z + 1] >= isoLevel) cubes[x][y][z].index |= 4u;
-				if (chunk->tiles[x][y][z + 1] >= isoLevel) cubes[x][y][z].index |= 8u;
-				if (chunk->tiles[x][y + 1][z] >= isoLevel) cubes[x][y][z].index |= 16u;
-				if (chunk->tiles[x + 1][y + 1][z] >= isoLevel) cubes[x][y][z].index |= 32u;
-				if (chunk->tiles[x + 1][y + 1][z + 1] >= isoLevel) cubes[x][y][z].index |= 64u;
-				if (chunk->tiles[x][y + 1][z + 1] >= isoLevel) cubes[x][y][z].index |= 128u;
-				//printf("%i, ", cubes[x][y][z].index);
-
-				triCount += triTable[cubes[x][y][z].index][15];
-			}
-
-	chunk->verts = CreateVertexList(triCount * 3);
-	//printf("%i, %i\n", vertCount, chunk->verts.count);
-
-	for (int x = 0; x < chunkWidth; x++)
+	void GenerateChunkMesh1(World* world)
 	{
-		currentPos[0] = x + chunk->pos[0] * chunkWidth - (chunkWidth / 2.0f);
+		uint index = world->chunks.count - 1;
+		int triCount = 0, activeVert = 0;
 
-		for (int y = 0; y < chunkWidth; y++)
-		{
-			currentPos[1] = y + chunk->pos[1] * chunkWidth - (chunkWidth / 2.0f);
+		HelperCube cubes[chunkWidth][chunkWidth][chunkWidth];
 
-			for (int z = 0; z < chunkWidth; z++)
-			{
-				currentPos[2] = z + chunk->pos[2] * chunkWidth - (chunkWidth / 2.0f);
-
-				currentValues[0] = chunk->tiles[x][y][z];
-				glm_vec3_copy(chunk->colors[x][y][z], currentColors[0]);
-
-				currentValues[1] = chunk->tiles[x + 1][y][z];
-				glm_vec3_copy(chunk->colors[x + 1][y][z], currentColors[1]);
-
-				currentValues[2] = chunk->tiles[x + 1][y][z + 1];
-				glm_vec3_copy(chunk->colors[x + 1][y][z + 1], currentColors[2]);
-
-				currentValues[3] = chunk->tiles[x][y][z + 1];
-				glm_vec3_copy(chunk->colors[x][y][z + 1], currentColors[3]);
-
-				currentValues[4] = chunk->tiles[x][y + 1][z];
-				glm_vec3_copy(chunk->colors[x][y + 1][z], currentColors[4]);
-
-				currentValues[5] = chunk->tiles[x + 1][y + 1][z];
-				glm_vec3_copy(chunk->colors[x + 1][y + 1][z], currentColors[5]);
-
-				currentValues[6] = chunk->tiles[x + 1][y + 1][z + 1];
-				glm_vec3_copy(chunk->colors[x + 1][y + 1][z + 1], currentColors[6]);
-
-				currentValues[7] = chunk->tiles[x][y + 1][z + 1];
-				glm_vec3_copy(chunk->colors[x][y + 1][z + 1], currentColors[7]);
-
-
-
-				#pragma region Find vertices
-
-				cubes[x][y][z].verts[0] = VertInterp(currentPos, currentValues[0], currentColors[0], (vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1]);
-				cubes[x][y][z].verts[1] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1], (vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2]);
-				cubes[x][y][z].verts[2] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2], (vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3]);
-				cubes[x][y][z].verts[3] = VertInterp((vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3], currentPos, currentValues[0], currentColors[0]);
-
-				cubes[x][y][z].verts[4] = VertInterp((vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5]);
-				cubes[x][y][z].verts[5] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6]);
-				cubes[x][y][z].verts[6] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7]);
-				cubes[x][y][z].verts[7] = VertInterp((vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4]);
-
-				cubes[x][y][z].verts[8] = VertInterp(currentPos, currentValues[0], currentColors[0], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4]);
-				cubes[x][y][z].verts[9] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5]);
-				cubes[x][y][z].verts[10] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6]);
-				cubes[x][y][z].verts[11] = VertInterp((vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7]);
-
-				#pragma endregion
-
-				Tri value;
-				//printf("a");
-				for (uint8_t i = 0; i < triTable[cubes[x][y][z].index][15] * 3; i += 3)
+		for (int x = 0; x < chunkWidth; x++)
+			for (int y = 0; y < chunkWidth; y++)
+				for (int z = 0; z < chunkWidth; z++)
 				{
-					//printf("%i : ", cubes[x][y][z].index);
-					value.a = triTable[cubes[x][y][z].index][i];
-					value.b = triTable[cubes[x][y][z].index][i + 1];
-					value.c = triTable[cubes[x][y][z].index][i + 2];
+					world->chunks.l[index].indices[x][y][z] = 0;
+					if (world->chunks.l[index].tiles[x][y][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 1u;
+					if (world->chunks.l[index].tiles[x + 1][y][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 2u;
+					if (world->chunks.l[index].tiles[x + 1][y][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 4u;
+					if (world->chunks.l[index].tiles[x][y][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 8u;
+					if (world->chunks.l[index].tiles[x][y + 1][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 16u;
+					if (world->chunks.l[index].tiles[x + 1][y + 1][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 32u;
+					if (world->chunks.l[index].tiles[x + 1][y + 1][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 64u;
+					if (world->chunks.l[index].tiles[x][y + 1][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 128u;
+					//printf("%i, ", cubes[x][y][z].index);
+
+					triCount += triTable[world->chunks.l[index].indices[x][y][z]][15];
+				}
+
+		IncreaseVertexListList(&world->chunks.v, triCount * 3);
+	}
+
+	void GenerateChunkMesh2(Chunk* chunk)
+	{
+		/*int activeVert = 0;
+		float currentValues[8];
+		vec3 currentColors[8];
+		vec3 currentPos;
+
+		HelperCube cubes[chunkWidth][chunkWidth][chunkWidth];
+
+		for (int x = 0; x < chunkWidth; x++)
+		{
+			currentPos[0] = x + chunk->pos[0] * chunkWidth - (chunkWidth / 2.0f);
+
+			for (int y = 0; y < chunkWidth; y++)
+			{
+				currentPos[1] = y + chunk->pos[1] * chunkWidth - (chunkWidth / 2.0f);
+
+				for (int z = 0; z < chunkWidth; z++)
+				{
+					currentPos[2] = z + chunk->pos[2] * chunkWidth - (chunkWidth / 2.0f);
+
+					currentValues[0] = chunk->tiles[x][y][z];
+					glm_vec3_copy(chunk->colors[x][y][z], currentColors[0]);
+
+					currentValues[1] = chunk->tiles[x + 1][y][z];
+					glm_vec3_copy(chunk->colors[x + 1][y][z], currentColors[1]);
+
+					currentValues[2] = chunk->tiles[x + 1][y][z + 1];
+					glm_vec3_copy(chunk->colors[x + 1][y][z + 1], currentColors[2]);
+
+					currentValues[3] = chunk->tiles[x][y][z + 1];
+					glm_vec3_copy(chunk->colors[x][y][z + 1], currentColors[3]);
+
+					currentValues[4] = chunk->tiles[x][y + 1][z];
+					glm_vec3_copy(chunk->colors[x][y + 1][z], currentColors[4]);
+
+					currentValues[5] = chunk->tiles[x + 1][y + 1][z];
+					glm_vec3_copy(chunk->colors[x + 1][y + 1][z], currentColors[5]);
+
+					currentValues[6] = chunk->tiles[x + 1][y + 1][z + 1];
+					glm_vec3_copy(chunk->colors[x + 1][y + 1][z + 1], currentColors[6]);
+
+					currentValues[7] = chunk->tiles[x][y + 1][z + 1];
+					glm_vec3_copy(chunk->colors[x][y + 1][z + 1], currentColors[7]);
 
 
-					vec3 tempVecs[3];
 
-					glm_vec3_sub(cubes[x][y][z].verts[value.b].pos, cubes[x][y][z].verts[value.a].pos, tempVecs[0]);
-					glm_vec3_sub(cubes[x][y][z].verts[value.c].pos, cubes[x][y][z].verts[value.a].pos, tempVecs[1]);
+#pragma region Find vertices
 
-					glm_cross(tempVecs[0], tempVecs[1], tempVecs[2]);
-					glm_vec3_normalize(tempVecs[2]);
+					cubes[x][y][z].verts[0] = VertInterp(currentPos, currentValues[0], currentColors[0], (vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1]);
+					cubes[x][y][z].verts[1] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1], (vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2]);
+					cubes[x][y][z].verts[2] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2], (vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3]);
+					cubes[x][y][z].verts[3] = VertInterp((vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3], currentPos, currentValues[0], currentColors[0]);
+
+					cubes[x][y][z].verts[4] = VertInterp((vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5]);
+					cubes[x][y][z].verts[5] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6]);
+					cubes[x][y][z].verts[6] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7]);
+					cubes[x][y][z].verts[7] = VertInterp((vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4]);
+
+					cubes[x][y][z].verts[8] = VertInterp(currentPos, currentValues[0], currentColors[0], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] }, currentValues[4], currentColors[4]);
+					cubes[x][y][z].verts[9] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] }, currentValues[1], currentColors[1], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] }, currentValues[5], currentColors[5]);
+					cubes[x][y][z].verts[10] = VertInterp((vec3) { currentPos[0] + 1, currentPos[1], currentPos[2] + 1 }, currentValues[2], currentColors[2], (vec3) { currentPos[0] + 1, currentPos[1] + 1, currentPos[2] + 1 }, currentValues[6], currentColors[6]);
+					cubes[x][y][z].verts[11] = VertInterp((vec3) { currentPos[0], currentPos[1], currentPos[2] + 1 }, currentValues[3], currentColors[3], (vec3) { currentPos[0], currentPos[1] + 1, currentPos[2] + 1 }, currentValues[7], currentColors[7]);
+
+#pragma endregion
+
+					Tri value;
+					//printf("a");
+					for (uint8_t i = 0; i < triTable[chunk->indices[x][y][z]][15] * 3; i += 3)
+					{
+						//printf("%i : ", cubes[x][y][z].index);
+						value.a = triTable[chunk->indices[x][y][z]][i];
+						value.b = triTable[chunk->indices[x][y][z]][i + 1];
+						value.c = triTable[chunk->indices[x][y][z]][i + 2];
 
 
-					glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.a].normal);
-					glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.b].normal);
-					glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.c].normal);
-					
+						vec3 tempVecs[3];
 
-					chunk->verts.l[activeVert] = cubes[x][y][z].verts[value.a];
-					chunk->verts.l[activeVert + 1] = cubes[x][y][z].verts[value.b];
-					chunk->verts.l[activeVert + 2] = cubes[x][y][z].verts[value.c];
-					
-					activeVert += 3;
+						glm_vec3_sub(cubes[x][y][z].verts[value.b].pos, cubes[x][y][z].verts[value.a].pos, tempVecs[0]);
+						glm_vec3_sub(cubes[x][y][z].verts[value.c].pos, cubes[x][y][z].verts[value.a].pos, tempVecs[1]);
+
+						glm_cross(tempVecs[0], tempVecs[1], tempVecs[2]);
+						glm_vec3_normalize(tempVecs[2]);
+
+
+						glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.a].normal);
+						glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.b].normal);
+						glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.c].normal);
+
+
+						chunk->verts.l[activeVert] = cubes[x][y][z].verts[value.a];
+						chunk->verts.l[activeVert + 1] = cubes[x][y][z].verts[value.b];
+						chunk->verts.l[activeVert + 2] = cubes[x][y][z].verts[value.c];
+
+						activeVert += 3;
+					}
 				}
 			}
 		}
+
+		chunk->mesh = CreateMesh2(chunk->verts.l, chunk->verts.count * sizeof(Vertex), GL_DYNAMIC_DRAW);*/
 	}
 
-	chunk->mesh = CreateMesh2(chunk->verts.l, chunk->verts.count * sizeof(Vertex), GL_DYNAMIC_DRAW);
-}
-
-Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol)
-{
-	Vertex result;
-
-	if (bVal - aVal == 0)
+	Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol)
 	{
-		result.pos[0] = (aPos[0] + bPos[0]) * 0.5f;
-		result.pos[1] = (aPos[1] + bPos[1]) * 0.5f;
-		result.pos[2] = (aPos[2] + bPos[2]) * 0.5f;
+		Vertex result;
+
+		if (bVal - aVal == 0)
+		{
+			result.pos[0] = (aPos[0] + bPos[0]) * 0.5f;
+			result.pos[1] = (aPos[1] + bPos[1]) * 0.5f;
+			result.pos[2] = (aPos[2] + bPos[2]) * 0.5f;
+		}
+		else
+		{
+			float mu = (isoLevel - aVal) / (bVal - aVal);
+
+
+			result.pos[0] = aPos[0] + mu * (bPos[0] - aPos[0]);
+			result.pos[1] = aPos[1] + mu * (bPos[1] - aPos[1]);
+			result.pos[2] = aPos[2] + mu * (bPos[2] - aPos[2]);
+
+			result.color[0] = aCol[0] + mu * (bCol[0] - aCol[0]);
+			result.color[1] = aCol[1] + mu * (bCol[1] - aCol[1]) + 0.5f;
+			result.color[2] = aCol[2] + mu * (bCol[2] - aCol[2]);
+		}
+		return result;
 	}
-	else
+
+	void GenerateChunk(Chunk* chunk, CaveNoise c)
 	{
-		float mu = (isoLevel - aVal) / (bVal - aVal);
+		//float _min = 0.0f, _max = 0.0f, average = 0.0f;
+		float height;
 
-
-		result.pos[0] = aPos[0] + mu * (bPos[0] - aPos[0]);
-		result.pos[1] = aPos[1] + mu * (bPos[1] - aPos[1]);
-		result.pos[2] = aPos[2] + mu * (bPos[2] - aPos[2]);
-
-		result.color[0] = aCol[0] + mu * (bCol[0] - aCol[0]);
-		result.color[1] = aCol[1] + mu * (bCol[1] - aCol[1]) + 0.5f;
-		result.color[2] = aCol[2] + mu * (bCol[2] - aCol[2]);
-	}
-	return result;
-}
-
-void GenerateChunk(Chunk* chunk, CaveNoise c)
-{
-	//float _min = 0.0f, _max = 0.0f, average = 0.0f;
-	float height;
-
-	for (int x = 0; x < (chunkWidth + 1); x++)
-		for (int y = 0; y < (chunkWidth + 1); y++)
-			for (int z = 0; z < (chunkWidth + 1); z++)
-			{
-				height = -(((float)y / chunkWidth) + chunk->pos[1]);
-				chunk->tiles[x][y][z]     = max(0, min(1, max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0.0f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) - height / 10.0f)) + GenerateCaveNoiseValue(c, 0.0125f, /*max(0, glm_signf(-height + 1) * (-height / (-height + 1)))*/0.25f, 4, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][0] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 1, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][1] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 2, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				chunk->colors[x][y][z][2] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 3, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
-				//_min = min(_min, chunk->tiles[x][y][z]);
-				//_max = max(_max, chunk->tiles[x][y][z]);
-				//average += chunk->tiles[x][y][z];
-				//printf("%f  ", chunk->tiles[x][y][z]);
-			}
-	//average /= (chunkWidth + 1) * (chunkWidth + 1) * (chunkWidth + 1);
-	//printf("%f, ", average);
-	//printf("(%f, %f, %f)", min, max, average);
-	//printf("%f, ", height);
-}
-
-void CreateWorld(World* world, Camera camera, float chunkRenderDist)
-{
-	vec3 localizedCamPos;
-	ivec3 minPos, maxPos;
-
-	localizedCamPos[0] = camera.pos[0] / chunkWidth;
-	localizedCamPos[1] = camera.pos[1] / chunkWidth;
-	localizedCamPos[2] = camera.pos[2] / chunkWidth;
-
-	minPos[0] = roundf(localizedCamPos[0] - chunkRenderDist);
-	minPos[1] = roundf(localizedCamPos[1] - chunkRenderDist);
-	minPos[2] = roundf(localizedCamPos[2] - chunkRenderDist);
-
-	maxPos[0] = roundf(localizedCamPos[0] + chunkRenderDist);
-	maxPos[1] = roundf(localizedCamPos[1] + chunkRenderDist);
-	maxPos[2] = roundf(localizedCamPos[2] + chunkRenderDist);
-
-	//int i = 0;
-	for (int x = minPos[0]; x <= maxPos[0]; x++)
-		for (int y = minPos[1]; y <= maxPos[1]; y++)
-			for (int z = minPos[2]; z <= maxPos[2]; z++)
-				if (glm_vec3_distance2(localizedCamPos, (vec3) { x, y, z }) < chunkRenderDist * chunkRenderDist)
+		for (int x = 0; x < (chunkWidth + 1); x++)
+			for (int y = 0; y < (chunkWidth + 1); y++)
+				for (int z = 0; z < (chunkWidth + 1); z++)
 				{
-					IncreaseChunkList(&world->chunks, 1);
-					world->chunks.l[world->chunks.count - 1].pos[0] = x;
-					world->chunks.l[world->chunks.count - 1].pos[1] = y;
-					world->chunks.l[world->chunks.count - 1].pos[2] = z;
-					GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
-					GenerateChunkMesh(&world->chunks.l[world->chunks.count - 1]);
+					height = -(((float)y / chunkWidth) + chunk->pos[1]);
+					chunk->tiles[x][y][z] = max(0, min(1, max(0, min(1, GenerateCaveNoiseValue(c, 0.025f, 0.0f, 0, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) }) - height / 10.0f)) + GenerateCaveNoiseValue(c, 0.0125f, /*max(0, glm_signf(-height + 1) * (-height / (-height + 1)))*/0.25f, 4, 2, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+					chunk->colors[x][y][z][0] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 1, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+					chunk->colors[x][y][z][1] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 2, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+					chunk->colors[x][y][z][2] = max(0, min(1, GenerateCaveNoiseValue(c, 0.01f, 0.0f, 3, 1, (vec3) { x + chunk->pos[0] * chunkWidth - (chunkWidth / 2), y + chunk->pos[1] * chunkWidth - (chunkWidth / 2), z + chunk->pos[2] * chunkWidth - (chunkWidth / 2) })));
+					//_min = min(_min, chunk->tiles[x][y][z]);
+					//_max = max(_max, chunk->tiles[x][y][z]);
+					//average += chunk->tiles[x][y][z];
+					//printf("%f  ", chunk->tiles[x][y][z]);
 				}
-}
+		//average /= (chunkWidth + 1) * (chunkWidth + 1) * (chunkWidth + 1);
+		//printf("%f, ", average);
+		//printf("(%f, %f, %f)", min, max, average);
+		//printf("%f, ", height);
+	}
+
+	void CreateWorld(World* world, Camera camera, float chunkRenderDist)
+	{
+		// Prepare for multithreading:
+		// Setup OpenCL.
+		int temp = 0;
+		cl_device_id device;
+		cl_platform_id platform = NULL;
+		cl_uint ret_num_devices;
+		cl_uint ret_num_platforms;
+		cl_int ret = clGetPlatformIDs(1, &platform, &ret_num_platforms);
+		//printf("0, ");
+		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &ret_num_devices);
+		//printf("1, ");
+		world->context = clCreateContext(NULL, 1, &device, NULL, NULL, &ret);
+		//printf("2, ");
+		world->queue = clCreateCommandQueueWithProperties(world->context, device, (cl_queue_properties)0, NULL);
+		//printf("3, ");
+
+		// Load the kernel source code into the array source_str.
+		FILE* fp;
+		char* source;
+		size_t source_size;
+
+		errno_t error = fopen_s(&fp, "C:/Users/180022550/source/repos/Cat-Brain/CLearning/CLearning/Kernels/MarchingCubes.txt", "r");
+		if (error != 0) {
+			fprintf(stderr, "Failed to load kernel.\n");
+			exit(1);
+		}
+		//printf("4, ");
+		#define MAX_SOURCE_SIZE (0x11111111)
+		source = (char*)malloc(MAX_SOURCE_SIZE);
+		//printf("5, ");
+		source_size = fread(source, 1, MAX_SOURCE_SIZE, fp);
+		//printf("6, ");
+		fclose(fp);
+		//printf("7, ");
+
+		// Compile the kernel.
+		world->program = clCreateProgramWithSource(world->context, 1, (const char**)&source, (const size_t*)&source_size, &ret);
+		//printf("8, ");
+		clBuildProgram(world->program, 1, device, NULL, NULL, NULL);
+		//printf("9, ");
+		world->kernel = clCreateKernel(world->program, "GenerateChunkMesh", NULL);
+		//printf("10, ");
+
+			// Do actual marching cubes stuff now:
+		vec3 localizedCamPos;
+		ivec3 minPos, maxPos;
+
+		localizedCamPos[0] = camera.pos[0] / chunkWidth;
+		localizedCamPos[1] = camera.pos[1] / chunkWidth;
+		localizedCamPos[2] = camera.pos[2] / chunkWidth;
+
+		minPos[0] = roundf(localizedCamPos[0] - chunkRenderDist);
+		minPos[1] = roundf(localizedCamPos[1] - chunkRenderDist);
+		minPos[2] = roundf(localizedCamPos[2] - chunkRenderDist);
+
+		maxPos[0] = roundf(localizedCamPos[0] + chunkRenderDist);
+		maxPos[1] = roundf(localizedCamPos[1] + chunkRenderDist);
+		maxPos[2] = roundf(localizedCamPos[2] + chunkRenderDist);
+
+		printf("0, ");
+
+
+
+		printf("1, ");
+
+		//int i = 0;
+		for (int x = minPos[0]; x <= maxPos[0]; x++)
+			for (int y = minPos[1]; y <= maxPos[1]; y++)
+				for (int z = minPos[2]; z <= maxPos[2]; z++)
+					if (glm_vec3_distance2(localizedCamPos, (vec3) { x, y, z }) < chunkRenderDist* chunkRenderDist)
+					{
+						IncreaseChunkList(&world->chunks, 1);
+						world->chunks.l[world->chunks.count - 1].pos[0] = x;
+						world->chunks.l[world->chunks.count - 1].pos[1] = y;
+						world->chunks.l[world->chunks.count - 1].pos[2] = z;
+						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
+						GenerateChunkMesh1(&world);
+						//GenerateChunkMesh2(&world->chunks.l[world->chunks.count - 1]);
+					}
+
+		// Create memory buffers on the device for each vector.
+		printf("0, ");
+		world->memObjChunks = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+
+		world->memObjVerts = clCreateBuffer(world->context, CL_MEM_WRITE_ONLY, sizeof(Vertex) * world->chunks.v.total, NULL, &ret);
+
+		world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(uint) * world->chunks.v.offsets.count, NULL, &ret);
+
+		printf("1, ");
+
+		size_t global_dimensions[] = { world->chunks.count, 0, 0 };
+
+		// Copy the world into it's respective place.
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjChunks, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjVerts, CL_TRUE, 0, world->chunks.v.total * sizeof(Vertex), world->chunks.v.l, 0, NULL, NULL);
+		printf("2, ");
+		unsigned int zero = 0;
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &zero, 0, NULL, NULL);
+		printf("3, ");
+
+		// Set the arguments of the kernel
+		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjChunks);
+		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjVerts);
+		printf("4, ");
+		ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
+		printf("5, ");
+
+		size_t local_dimensions = 64;
+		clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
+		printf("6, ");
+		ret = clEnqueueReadBuffer(world->queue, world->memObjVerts, CL_TRUE, 0,
+			sizeof(Vertex) * world->chunks.v.total, world->chunks.v.l, 0, NULL, NULL);
+		printf("7, ");
+		ret = clFlush(world->queue);
+		printf("8, ");
+		ret = clFinish(world->queue);
+
+		for (int i = 0; i < world->chunks.count - 1; i++);
+			//world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
+	}
 
 void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 {
+	//printf("!");
 	int i = 0;
 
 	#pragma region Delete out of range chunks
@@ -505,6 +604,8 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 	maxPos[1] = roundf(localizedCamPos[1] + chunkRenderDist);
 	maxPos[2] = roundf(localizedCamPos[2] + chunkRenderDist);
 
+	int chunkMultithreadOffset = world->chunks.count - 1;
+
 	//int i = 0;
 	for (int x = minPos[0]; x <= maxPos[0]; x++)
 		for (int y = minPos[1]; y <= maxPos[1]; y++)
@@ -523,10 +624,59 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 						world->chunks.l[world->chunks.count - 1].pos[1] = y;
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
-						GenerateChunkMesh(&world->chunks.l[world->chunks.count - 1]);
-						return;
+						GenerateChunkMesh1(&world);
+						//return;
 						//printf("%i, ", world->chunks.count);
 					}
 				}
+
+	int ret;
+
+	printf("0, ");
+	clReleaseMemObject(world->memObjChunks);
+	world->memObjChunks = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+
+	clReleaseMemObject(world->memObjVerts);
+	world->memObjVerts = clCreateBuffer(world->context, CL_MEM_WRITE_ONLY, sizeof(Vertex) * world->chunks.v.total, NULL, &ret);
+
+	clReleaseMemObject(world->memObjOffset);
+	world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(uint) * world->chunks.v.offsets.count, NULL, &ret);
+
+	printf("1, ");
+
+	size_t global_dimensions[] = { world->chunks.count - chunkMultithreadOffset, 0, 0 };
+
+	// Copy the world into it's respective place.
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjChunks, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjVerts, CL_TRUE, 0, world->chunks.v.total * sizeof(Vertex), world->chunks.l, 0, NULL, NULL);
+	printf("2, ");
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, world->chunks.v.offsets.count * sizeof(uint), &chunkMultithreadOffset, 0, NULL, NULL);
+	printf("3, ");
+
+	// Set the arguments of the kernel
+	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjChunks);
+	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjVerts);
+	printf("4, ");
+	ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
+	printf("5, ");
+
+	size_t local_dimensions = 64;
+	clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
+	printf("6, ");
+	ret = clEnqueueReadBuffer(world->queue, world->memObjVerts, CL_TRUE, 0,
+		sizeof(Vertex) * world->chunks.v.total, world->chunks.v.l, 0, NULL, NULL);
+	printf("7, ");
+
+	ret = clFlush(world->queue);
+	printf("8, ");
+	ret = clFinish(world->queue);
+	printf("9, ");
+
+	//for (int i = chunkMultithreadOffset; i < (world->chunks.count - chunkMultithreadOffset); i++)
+		//world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
+
+	printf("10, ");
+
+
 	#pragma endregion
 }

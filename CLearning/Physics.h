@@ -233,7 +233,7 @@ RaycastHit RaycastWorld(vec3 pos, vec3 dir, float dist, World world)
 		
 		if (chunkIndex != -1)
 		{
-			for (uint16_t i = 0; i * 3 < world.chunks.l[chunkIndex].verts.count; i++)
+			for (uint16_t i = 0; i * 3 < FindVertexListListTotal(chunkIndex); i++)
 			{
 				RaycastHit newHit = RayTriangleCollision(pos, dir, &world.chunks.l[chunkIndex].verts.l[i * 3]);
 

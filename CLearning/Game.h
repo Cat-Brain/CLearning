@@ -44,7 +44,7 @@ World world;
 bool firstFrameForMouse = true;
 bool mouseLocked = true;
 
-float chunkRenderDist = 3.0f;
+float chunkRenderDist = 5.0f;
 
 int error = 0;
 
@@ -175,10 +175,12 @@ void Start()
 
 	
 	CreateWorld(&world, player.camera, chunkRenderDist);
+	
 
 	#pragma endregion
 
 	webHitObject = CreateObject11(cube, DEFAULT_DIFFUSE_SHADER);
+	
 }
 
 float prevTime = 0.0f;
@@ -186,22 +188,25 @@ int temp = 0.0f;
 
 void Update()
 {
+	
 	float time = glfwGetTime();
 	float deltaTime = time - prevTime;
 	float FPS = 1.0f / deltaTime;
 	char buff[10];
-	int err = _gcvt_s(buff, sizeof(buff), (float)FPS, 5);
+	/*int err = _gcvt_s(buff, sizeof(buff), (float)FPS, 5);
 	if (err != 0)
 	{
 		printf("_gcvt_s failed with error code %d\n", err);
 		glfwSetWindowShouldClose(window, 1);
-	}
+	}*/
 
 	char* title = "Marching cubes! Also, the frame rate is:           ";
 	//strcat_s(title, sizeof(title) / sizeof(char), buff);
 	glfwSetWindowTitle(window, title);
+	
 
 	processInput(deltaTime);
+	
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FB.FBO);
 	glViewport(0, 0, BUFF_WIDTH, BUFF_HEIGHT);
@@ -213,22 +218,26 @@ void Update()
 
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	
 
 	#pragma region rendering
 
 	SetBasicUniforms(player.camera, /*0.0f*/3.0f);
 	
-
+	
+	//printf("???");
 	UpdateWorld(&world, player.camera, chunkRenderDist);
-
 	for (int i = 0; i < world.chunks.count; i++)
 	{
 		DrawMesh22(world.chunks.l[i].mesh, player.camera, DIFF2_SHADER);
 	}
+	
 
 	DrawObject1(webHitObject, player.camera);
-
+	
+	
 	UpdatePlayer(&player, world);
+	
 
 	#pragma endregion
 
@@ -260,10 +269,20 @@ void End()
 	DestroyObject2(MarchingCubesObject);
 
 	for (int i = 0; i < world.chunks.count; i++)
+	{
+		DestroyMesh2(world.chunks.l[i].mesh);
 		free(world.chunks.l[i].verts.l);
+	}
 	free(world.chunks.l);
 	world.chunks.l = 0;
 	world.chunks.count = 0;
+
+	clReleaseKernel(world.kernel);
+	clReleaseProgram(world.program);
+	clReleaseMemObject(world.memObjWorld);
+	clReleaseMemObject(world.memObjOffset);
+	clReleaseCommandQueue(world.queue);
+	clReleaseContext(world.context);
 }
 
 int Run()

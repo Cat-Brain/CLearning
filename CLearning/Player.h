@@ -27,12 +27,6 @@ void MovePlayer(Player* player, vec3 input)
 
 void UpdatePlayer(Player* player, World world)
 {
-	// Do some basic player updating.
-	glm_vec3_add(player->collider.velocity, player->collider.pos, player->collider.pos);
-
-
-
-
 	// Update the collision of the player.
 	ivec3 minPos, maxPos;
 
@@ -45,8 +39,8 @@ void UpdatePlayer(Player* player, World world)
 	maxPos[2] = roundf((player->collider.pos[2] + player->collider.radius) / chunkWidth);
 
 
-	player->data.grounded = false;
-	player->data.nearWall = false;
+	player->data.grounded = true;//false;
+	player->data.nearWall = true;//false;
 	for (int x = minPos[0]; x <= maxPos[0]; x++)
 		for (int y = minPos[1]; y <= maxPos[1]; y++)
 			for (int z = minPos[2]; z <= maxPos[2]; z++)
@@ -54,15 +48,11 @@ void UpdatePlayer(Player* player, World world)
 				int16_t chunkIndex = -1;
 				for (int i = 0; i < world.chunks.count; i++)
 					chunkIndex = (glm_vec3_eqv((vec3) { x, y, z }, (vec3) { world.chunks.l[i].pos[0], world.chunks.l[i].pos[1], world.chunks.l[i].pos[2] }) ? i : chunkIndex);
-				if (chunkIndex == -1)
+				if (chunkIndex != -1)
 				{
-					//printf("(%i, %i, %i) : (%f, %f, %f), ", x, y, z, player->collider.pos[0], player->collider.pos[1], player->collider.pos[2]);
-				}
-				else
-				{
-					for (uint16_t i = 0; i * 3 < world.chunks.l[chunkIndex].verts.count; i++)
+					for (uint16_t i = 0; i * 3 < FindVertCountOfChunk(world.chunks.v, chunkIndex); i++)
 					{
-						SphereTriangleCollision(&player->collider, &world.chunks.l[chunkIndex].verts.l[i * 3]);
+						SphereTriangleCollision(&player->collider, &world.chunks.v.l[world.chunks.v.offsets.l[chunkIndex] + i * 3]);
 
 						/*vec3 offset;
 						glm_vec3_scale(player->camera.forward, player->data.jumpGroundOffset, offset);
@@ -71,12 +61,13 @@ void UpdatePlayer(Player* player, World world)
 						glm_vec3_add(player->collider.pos, offset, player->collider.pos);*/
 
 						player->collider.radius += player->data.legRange;
-						player->data.nearWall = max(player->data.nearWall, SphereTriangleColliding(&player->collider, &world.chunks.l[chunkIndex].verts.l[i * 3]));
+						player->data.nearWall = max(player->data.nearWall, SphereTriangleColliding(&player->collider, &world.chunks.v.l[world.chunks.v.offsets.l[chunkIndex] + i * 3]));
 						player->collider.radius -= player->data.legRange;
 					}
 				}
 			}
 
+	glm_vec3_add(player->collider.velocity, player->collider.pos, player->collider.pos);
 	// Set the position of the player's camera equal to the player's position in the collider.
 	glm_vec3_copy(player->collider.pos, player->camera.pos);
 	glm_vec3_copy(player->collider.pos, player->collider.lastPos);

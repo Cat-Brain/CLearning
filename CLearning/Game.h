@@ -44,7 +44,7 @@ World world;
 bool firstFrameForMouse = true;
 bool mouseLocked = true;
 
-float chunkRenderDist = 5.0f;
+float chunkRenderDist = 3.0f;
 
 int error = 0;
 
@@ -175,6 +175,8 @@ void Start()
 
 	
 	CreateWorld(&world, player.camera, chunkRenderDist);
+	/*for (int i = 0; i < FindTotalOfVertexListList(world.chunks.v); i++)
+		printf("(%f, %f, %f), ", world.chunks.v.l[i].pos[0], world.chunks.v.l[i].pos[1], world.chunks.v.l[i].pos[2]);*/
 	
 
 	#pragma endregion
@@ -225,19 +227,22 @@ void Update()
 	SetBasicUniforms(player.camera, /*0.0f*/3.0f);
 	
 	
-	//printf("???");
+	//printf("111");
 	UpdateWorld(&world, player.camera, chunkRenderDist);
+	//printf("222");
 	for (int i = 0; i < world.chunks.count; i++)
 	{
+		//printf("%i", i);
 		DrawMesh22(world.chunks.l[i].mesh, player.camera, DIFF2_SHADER);
 	}
+	//printf("333");
 	
 
-	DrawObject1(webHitObject, player.camera);
-	
+	//DrawObject1(webHitObject, player.camera);
+	//printf("444");
 	
 	UpdatePlayer(&player, world);
-	
+	//printf("555");
 
 	#pragma endregion
 
@@ -269,17 +274,18 @@ void End()
 	DestroyObject2(MarchingCubesObject);
 
 	for (int i = 0; i < world.chunks.count; i++)
-	{
 		DestroyMesh2(world.chunks.l[i].mesh);
-		free(world.chunks.l[i].verts.l);
-	}
+
+	free(world.chunks.v.l);
+	free(world.chunks.v.offsets.l);
 	free(world.chunks.l);
 	world.chunks.l = 0;
 	world.chunks.count = 0;
 
 	clReleaseKernel(world.kernel);
 	clReleaseProgram(world.program);
-	clReleaseMemObject(world.memObjWorld);
+	clReleaseMemObject(world.memObjChunks);
+	clReleaseMemObject(world.memObjVerts);
 	clReleaseMemObject(world.memObjOffset);
 	clReleaseCommandQueue(world.queue);
 	clReleaseContext(world.context);
@@ -447,7 +453,7 @@ void processInput(float deltaTime)
 
 	spaceLastFrame = spaceThisFrame;
 
-	if (!player.data.nearWall) player.collider.velocity[1] -= player.data.gravity * deltaTime;
+	//if (!player.data.nearWall) player.collider.velocity[1] -= player.data.gravity * deltaTime;
 
 	MovePlayer(&player, camMovement);
 

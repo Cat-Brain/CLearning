@@ -60,9 +60,9 @@ void UpdatePlayer(Player* player, World world)
 				}
 				else
 				{
-					for (uint16_t i = 0; i * 3 < world.chunks.l[chunkIndex].verts.count; i++)
+					for (uint16_t i = 0; i * 3 < FindTotalOfVertexListList(world.chunks.v); i++)
 					{
-						SphereTriangleCollision(&player->collider, &world.chunks.l[chunkIndex].verts.l[i * 3]);
+						SphereTriangleCollision(&player->collider, &world.chunks.v.l[world.chunks.v.offsets.l[chunkIndex] + i * 3]);
 
 						/*vec3 offset;
 						glm_vec3_scale(player->camera.forward, player->data.jumpGroundOffset, offset);
@@ -71,7 +71,7 @@ void UpdatePlayer(Player* player, World world)
 						glm_vec3_add(player->collider.pos, offset, player->collider.pos);*/
 
 						player->collider.radius += player->data.legRange;
-						player->data.nearWall = max(player->data.nearWall, SphereTriangleColliding(&player->collider, &world.chunks.l[chunkIndex].verts.l[i * 3]));
+						player->data.nearWall = max(player->data.nearWall, SphereTriangleColliding(&player->collider, &world.chunks.v.l[world.chunks.v.offsets.l[chunkIndex] + i * 3]));
 						player->collider.radius -= player->data.legRange;
 					}
 				}

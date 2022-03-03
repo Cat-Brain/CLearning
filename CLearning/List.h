@@ -26,6 +26,17 @@ VoidList CreateVoidList(unsigned int startCount)
 	return l;
 }
 
+UIntList CreateUIntList(uint startCount)
+{
+	UIntList l;
+
+	l.l = (uint*)calloc(startCount, sizeof(uint));
+
+	l.count = startCount;
+
+	return l;
+}
+
 Vec3List CreateVec3List(unsigned int startCount)
 {
 	Vec3List l;
@@ -70,6 +81,18 @@ ChunkList CreateChunkList(unsigned int startCount)
 	return l;
 }
 
+
+VertexListList CreateNullVertexListList()
+{
+	VertexListList l;
+	l.l = malloc(0);
+	l.offsets.l = malloc(sizeof(uint));
+	l.offsets.l[0] = 0u;
+	l.offsets.count = 1;
+
+	return l;
+}
+
 #pragma endregion
 
 
@@ -77,6 +100,13 @@ ChunkList CreateChunkList(unsigned int startCount)
 void AddToVoidList(VoidList* l, void* item)
 {
 	l->l = (void**)realloc(l->l, (l->count + 1) * sizeof(void*));
+	l->l[l->count] = item;
+	l->count++;
+}
+
+void AddToUIntList(UIntList* l, uint item)
+{
+	l->l = (uint*)realloc(l->l, (l->count + 1) * sizeof(uint));
 	l->l[l->count] = item;
 	l->count++;
 }
@@ -125,6 +155,12 @@ void IncreaseVoidList(VoidList* l, unsigned int amount)
 	l->count += amount;
 }
 
+void IncreaseUIntList(UIntList* l, uint amount)
+{
+	l->l = (uint*)realloc(l->l, (l->count + amount) * sizeof(uint));
+	l->count += amount;
+}
+
 void IncreaseVec3List(Vec3List* l, unsigned int amount)
 {
 	l->l = (Vec3*)realloc(l->l, (l->count + amount) * sizeof(Vec3));
@@ -147,6 +183,38 @@ void IncreaseChunkList(ChunkList* l, unsigned int amount)
 {
 	l->l = (Chunk*)realloc(l->l, (l->count + amount) * sizeof(Chunk));
 	l->count += amount;
+}
+
+
+uint FindTotalOfVertexListList(VertexListList l);
+void SetTotalOfVertexListList(VertexListList* l, uint value);
+
+void IncreaseVertexListList(VertexListList* l, uint count)
+{
+	SetTotalOfVertexListList(l, FindTotalOfVertexListList(*l) + count);
+
+	AddToUIntList(&l->offsets, FindTotalOfVertexListList(*l));
+
+	l->l = (Chunk*)realloc(l->l, FindTotalOfVertexListList(*l) * sizeof(Vertex));
+}
+
+#pragma endregion
+
+#pragma region Find values in list
+
+uint FindTotalOfVertexListList(VertexListList l)
+{
+	return l.offsets.l[l.offsets.count - 1];
+}
+
+void SetTotalOfVertexListList(VertexListList* l, uint value)
+{
+	l->offsets.l[l->offsets.count - 1] = value;
+}
+
+uint FindVertCountOfChunk(VertexListList l, uint chunkIndex)
+{
+	return l.offsets.l[chunkIndex + 1] - l.offsets.l[chunkIndex];
 }
 
 #pragma endregion

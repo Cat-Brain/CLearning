@@ -233,9 +233,9 @@ RaycastHit RaycastWorld(vec3 pos, vec3 dir, float dist, World world)
 		
 		if (chunkIndex != -1)
 		{
-			for (uint16_t i = 0; i * 3 < world.chunks.l[chunkIndex].verts.count; i++)
+			for (uint16_t i = 0; i * 3 < FindVertCountOfChunk(world.chunks.v, chunkIndex); i++)
 			{
-				RaycastHit newHit = RayTriangleCollision(pos, dir, &world.chunks.l[chunkIndex].verts.l[i * 3]);
+				RaycastHit newHit = RayTriangleCollision(pos, dir, &world.chunks.v.l[world.chunks.v.offsets.l[chunkIndex] + i * 3]);
 
 				if (!glm_vec3_eqv((vec3) { 0.0f, 0.0f, 0.0f }, newHit.norm) && newHit.dist < hit.dist && newHit.dist < dist)
 				{

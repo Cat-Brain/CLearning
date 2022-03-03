@@ -264,8 +264,9 @@ int8_t triTable[256][16] =
 
 	Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol);
 
-	void GenerateChunkMesh1(Chunk* chunk)
+	void GenerateChunkMesh1(World* world)
 	{
+		uint index = world->chunks.count - 1;
 		int triCount = 0, activeVert = 0;
 
 		HelperCube cubes[chunkWidth][chunkWidth][chunkWidth];
@@ -274,26 +275,26 @@ int8_t triTable[256][16] =
 			for (int y = 0; y < chunkWidth; y++)
 				for (int z = 0; z < chunkWidth; z++)
 				{
-					chunk->indices[x][y][z] = 0;
-					if (chunk->tiles[x][y][z] >= isoLevel) chunk->indices[x][y][z] |= 1u;
-					if (chunk->tiles[x + 1][y][z] >= isoLevel) chunk->indices[x][y][z] |= 2u;
-					if (chunk->tiles[x + 1][y][z + 1] >= isoLevel) chunk->indices[x][y][z] |= 4u;
-					if (chunk->tiles[x][y][z + 1] >= isoLevel) chunk->indices[x][y][z] |= 8u;
-					if (chunk->tiles[x][y + 1][z] >= isoLevel) chunk->indices[x][y][z] |= 16u;
-					if (chunk->tiles[x + 1][y + 1][z] >= isoLevel) chunk->indices[x][y][z] |= 32u;
-					if (chunk->tiles[x + 1][y + 1][z + 1] >= isoLevel) chunk->indices[x][y][z] |= 64u;
-					if (chunk->tiles[x][y + 1][z + 1] >= isoLevel) chunk->indices[x][y][z] |= 128u;
+					world->chunks.l[index].indices[x][y][z] = 0;
+					if (world->chunks.l[index].tiles[x][y][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 1u;
+					if (world->chunks.l[index].tiles[x + 1][y][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 2u;
+					if (world->chunks.l[index].tiles[x + 1][y][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 4u;
+					if (world->chunks.l[index].tiles[x][y][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 8u;
+					if (world->chunks.l[index].tiles[x][y + 1][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 16u;
+					if (world->chunks.l[index].tiles[x + 1][y + 1][z] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 32u;
+					if (world->chunks.l[index].tiles[x + 1][y + 1][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 64u;
+					if (world->chunks.l[index].tiles[x][y + 1][z + 1] >= isoLevel) world->chunks.l[index].indices[x][y][z] |= 128u;
 					//printf("%i, ", cubes[x][y][z].index);
 
-					triCount += triTable[chunk->indices[x][y][z]][15];
+					triCount += triTable[world->chunks.l[index].indices[x][y][z]][15];
 				}
 
-		chunk->verts = CreateVertexList(triCount * 3);
+		IncreaseVertexListList(&world->chunks.v, triCount * 3);
 	}
 
 	void GenerateChunkMesh2(Chunk* chunk)
 	{
-		int activeVert = 0;
+		/*int activeVert = 0;
 		float currentValues[8];
 		vec3 currentColors[8];
 		vec3 currentPos;
@@ -391,7 +392,7 @@ int8_t triTable[256][16] =
 			}
 		}
 
-		chunk->mesh = CreateMesh2(chunk->verts.l, chunk->verts.count * sizeof(Vertex), GL_DYNAMIC_DRAW);
+		chunk->mesh = CreateMesh2(chunk->verts.l, chunk->verts.count * sizeof(Vertex), GL_DYNAMIC_DRAW);*/
 	}
 
 	Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol)
@@ -455,40 +456,40 @@ int8_t triTable[256][16] =
 		cl_uint ret_num_devices;
 		cl_uint ret_num_platforms;
 		cl_int ret = clGetPlatformIDs(1, &platform, &ret_num_platforms);
-		printf("0, ");
+		//printf("0, ");
 		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &ret_num_devices);
-		printf("1, ");
+		//printf("1, ");
 		world->context = clCreateContext(NULL, 1, &device, NULL, NULL, &ret);
-		printf("2, ");
+		//printf("2, ");
 		world->queue = clCreateCommandQueueWithProperties(world->context, device, (cl_queue_properties)0, NULL);
-		printf("3, ");
+		//printf("3, ");
 
 		// Load the kernel source code into the array source_str.
 		FILE* fp;
 		char* source;
 		size_t source_size;
 
-		errno_t error = fopen_s(&fp, "kernels/MarchingCubes.txt", "r");
+		errno_t error = fopen_s(&fp, "Kernels/MarchingCubes.txt", "r");
 		if (error != 0) {
 			fprintf(stderr, "Failed to load kernel.\n");
 			exit(1);
 		}
-		printf("4, ");
+		//printf("4, ");
 		#define MAX_SOURCE_SIZE (0x11111111)
 		source = (char*)malloc(MAX_SOURCE_SIZE);
-		printf("5, ");
+		//printf("5, ");
 		source_size = fread(source, 1, MAX_SOURCE_SIZE, fp);
-		printf("6, ");
+		//printf("6, ");
 		fclose(fp);
-		printf("7, ");
+		//printf("7, ");
 
 		// Compile the kernel.
 		world->program = clCreateProgramWithSource(world->context, 1, (const char**)&source, (const size_t*)&source_size, &ret);
-		printf("8, ");
+		//printf("8, ");
 		clBuildProgram(world->program, 1, device, NULL, NULL, NULL);
-		printf("9, ");
+		//printf("9, ");
 		world->kernel = clCreateKernel(world->program, "GenerateChunkMesh", NULL);
-		printf("10, ");
+		//printf("10, ");
 
 			// Do actual marching cubes stuff now:
 		vec3 localizedCamPos;
@@ -506,6 +507,12 @@ int8_t triTable[256][16] =
 		maxPos[1] = roundf(localizedCamPos[1] + chunkRenderDist);
 		maxPos[2] = roundf(localizedCamPos[2] + chunkRenderDist);
 
+		printf("0?, ");
+
+		world->chunks.v = CreateNullVertexListList();
+
+		printf("1, ");
+
 		//int i = 0;
 		for (int x = minPos[0]; x <= maxPos[0]; x++)
 			for (int y = minPos[1]; y <= maxPos[1]; y++)
@@ -517,29 +524,35 @@ int8_t triTable[256][16] =
 						world->chunks.l[world->chunks.count - 1].pos[1] = y;
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
-						GenerateChunkMesh1(&world->chunks.l[world->chunks.count - 1]);
+						//printf("?, ");
+						GenerateChunkMesh1(world);
+						//printf("!, ");
 						//GenerateChunkMesh2(&world->chunks.l[world->chunks.count - 1]);
 					}
 
 		// Create memory buffers on the device for each vector.
 		printf("0, ");
-		world->memObjWorld = clCreateBuffer(world->context, CL_MEM_READ_WRITE, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+		world->memObjChunks = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(Chunk) * world->chunks.count, NULL, &ret);
 
-		world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(unsigned int), NULL, &ret);
+		world->memObjVerts = clCreateBuffer(world->context, CL_MEM_WRITE_ONLY, sizeof(Vertex) * FindTotalOfVertexListList(world->chunks.v), NULL, &ret);
+
+		world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(uint) * world->chunks.v.offsets.count, NULL, &ret);
 
 		printf("1, ");
 
 		size_t global_dimensions[] = { world->chunks.count, 0, 0 };
 
 		// Copy the world into it's respective place.
-		ret = clEnqueueWriteBuffer(world->queue, world->memObjWorld, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjChunks, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+		ret = clEnqueueWriteBuffer(world->queue, world->memObjVerts, CL_TRUE, 0, FindTotalOfVertexListList(world->chunks.v) * sizeof(Vertex), world->chunks.v.l, 0, NULL, NULL);
 		printf("2, ");
 		unsigned int zero = 0;
 		ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &zero, 0, NULL, NULL);
 		printf("3, ");
 
 		// Set the arguments of the kernel
-		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjWorld);
+		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjChunks);
+		ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjVerts);
 		printf("4, ");
 		ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
 		printf("5, ");
@@ -547,15 +560,15 @@ int8_t triTable[256][16] =
 		size_t local_dimensions = 64;
 		clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
 		printf("6, ");
-		ret = clEnqueueReadBuffer(world->queue, world->memObjWorld, CL_TRUE, 0,
-			sizeof(Chunk) * world->chunks.count, world->chunks.l, 0, NULL, NULL);
+		ret = clEnqueueReadBuffer(world->queue, world->memObjVerts, CL_TRUE, 0,
+			sizeof(Vertex) * FindTotalOfVertexListList(world->chunks.v), world->chunks.v.l, 0, NULL, NULL);
 		printf("7, ");
 		ret = clFlush(world->queue);
 		printf("8, ");
 		ret = clFinish(world->queue);
 
-		for (int i = 0; i < world->chunks.count; i++)
-			world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
+		for (int i = 0; i < world->chunks.count - 1; i++);
+			//world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
 	}
 
 void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
@@ -613,7 +626,7 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 						world->chunks.l[world->chunks.count - 1].pos[1] = y;
 						world->chunks.l[world->chunks.count - 1].pos[2] = z;
 						GenerateChunk(&world->chunks.l[world->chunks.count - 1], world->noise);
-						GenerateChunkMesh1(&world->chunks.l[world->chunks.count - 1]);
+						GenerateChunkMesh1(&world);
 						//return;
 						//printf("%i, ", world->chunks.count);
 					}
@@ -622,24 +635,29 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 	int ret;
 
 	printf("0, ");
-	clReleaseMemObject(world->memObjWorld);
-	world->memObjWorld = clCreateBuffer(world->context, CL_MEM_READ_WRITE, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+	clReleaseMemObject(world->memObjChunks);
+	world->memObjChunks = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(Chunk) * world->chunks.count, NULL, &ret);
+
+	clReleaseMemObject(world->memObjVerts);
+	world->memObjVerts = clCreateBuffer(world->context, CL_MEM_WRITE_ONLY, sizeof(Vertex) * FindTotalOfVertexListList(world->chunks.v), NULL, &ret);
 
 	clReleaseMemObject(world->memObjOffset);
-	world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(unsigned int), NULL, &ret);
+	world->memObjOffset = clCreateBuffer(world->context, CL_MEM_READ_ONLY, sizeof(uint) * world->chunks.v.offsets.count, NULL, &ret);
 
 	printf("1, ");
 
 	size_t global_dimensions[] = { world->chunks.count - chunkMultithreadOffset, 0, 0 };
 
 	// Copy the world into it's respective place.
-	ret = clEnqueueWriteBuffer(world->queue, world->memObjWorld, CL_TRUE, 0, (world->chunks.count - chunkMultithreadOffset) * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjChunks, CL_TRUE, 0, world->chunks.count * sizeof(Chunk), world->chunks.l, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjVerts, CL_TRUE, 0, FindTotalOfVertexListList(world->chunks.v) * sizeof(Vertex), world->chunks.l, 0, NULL, NULL);
 	printf("2, ");
-	ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, sizeof(unsigned int), &chunkMultithreadOffset, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(world->queue, world->memObjOffset, CL_TRUE, 0, (world->chunks.v.offsets.count - chunkMultithreadOffset) * sizeof(uint), &world->chunks.v.offsets.l[chunkMultithreadOffset], 0, NULL, NULL);
 	printf("3, ");
 
 	// Set the arguments of the kernel
-	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjWorld);
+	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjChunks);
+	ret = clSetKernelArg(world->kernel, 0, sizeof(cl_mem), (void*)&world->memObjVerts);
 	printf("4, ");
 	ret = clSetKernelArg(world->kernel, 1, sizeof(cl_mem), (void*)&world->memObjOffset);
 	printf("5, ");
@@ -647,8 +665,8 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 	size_t local_dimensions = 64;
 	clEnqueueNDRangeKernel(world->queue, world->kernel, 1, NULL, global_dimensions, &local_dimensions, 0, NULL, NULL);
 	printf("6, ");
-	ret = clEnqueueReadBuffer(world->queue, world->memObjWorld, CL_TRUE, 0,
-		sizeof(Chunk) * world->chunks.count, world->chunks.l, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(world->queue, world->memObjVerts, CL_TRUE, 0,
+		sizeof(Vertex) * FindTotalOfVertexListList(world->chunks.v), world->chunks.v.l, 0, NULL, NULL);
 	printf("7, ");
 
 	ret = clFlush(world->queue);
@@ -657,10 +675,9 @@ void UpdateWorld(World* world, Camera camera, float chunkRenderDist)
 	printf("9, ");
 
 	for (int i = chunkMultithreadOffset; i < (world->chunks.count - chunkMultithreadOffset); i++)
-	{
-		DestroyMesh2(world->chunks.l[i].mesh);
-		world->chunks.l[i].mesh = CreateMesh2(world->chunks.l[i].verts.l, world->chunks.l[i].verts.count, GL_DYNAMIC_DRAW);
-	}
+		world->chunks.l[i].mesh = CreateMesh2(&world->chunks.v.l[world->chunks.v.offsets.l[i]], FindVertCountOfChunk(world->chunks.v, i), GL_DYNAMIC_DRAW);
+
+	printf("10, ");
 
 
 	#pragma endregion

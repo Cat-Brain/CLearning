@@ -269,17 +269,18 @@ void End()
 	DestroyObject2(MarchingCubesObject);
 
 	for (int i = 0; i < world.chunks.count; i++)
-	{
 		DestroyMesh2(world.chunks.l[i].mesh);
-		free(world.chunks.l[i].verts.l);
-	}
+
+	free(world.chunks.v.l);
+	free(world.chunks.v.offsets.l);
 	free(world.chunks.l);
 	world.chunks.l = 0;
 	world.chunks.count = 0;
 
 	clReleaseKernel(world.kernel);
 	clReleaseProgram(world.program);
-	clReleaseMemObject(world.memObjWorld);
+	clReleaseMemObject(world.memObjChunks);
+	clReleaseMemObject(world.memObjVerts);
 	clReleaseMemObject(world.memObjOffset);
 	clReleaseCommandQueue(world.queue);
 	clReleaseContext(world.context);

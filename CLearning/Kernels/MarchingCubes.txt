@@ -330,11 +330,11 @@ void glm_cross(vec3 a, vec3 b, vec3 result)
 	result[2] = a[0] * b[1] - a[1] * b[0];
 }
 
-kernel void GenerateChunkMesh(global Chunk* chunks, global Vertex* retVerts, global unsigned int* offsets)
+kernel void GenerateChunkMesh(global Chunk* chunks, Vertex* retVerts, global unsigned int* offsets)
 {
-/*int id = get_global_id(0) + offset;
+int id = get_global_id(0);
 Chunk* chunk = chunks[id];
-int triCount = 0, activeVert = 0;
+int activeVert = offsets[id];
 
 float currentValues[8];
 vec3 currentColors[8];
@@ -422,16 +422,14 @@ for (int x = 0; x < chunkWidth; x++)
 				glm_vec3_copy(tempVecs[2], cubes[x][y][z].verts[value.c].normal);
 
 
-				chunk->verts.l[activeVert] = cubes[x][y][z].verts[value.a];
-				chunk->verts.l[activeVert + 1] = cubes[x][y][z].verts[value.b];
-				chunk->verts.l[activeVert + 2] = cubes[x][y][z].verts[value.c];
+				retVerts[activeVert] = cubes[x][y][z].verts[value.a];
+				retVerts[activeVert + 1] = cubes[x][y][z].verts[value.b];
+				retVerts[activeVert + 2] = cubes[x][y][z].verts[value.c];
 
 				activeVert += 3;
 			}
 		}
 	}
-
-	chunks[id] = &chunk;*/
 }
 
 Vertex VertInterp(vec3 aPos, float aVal, vec3 aCol, vec3 bPos, float bVal, vec3 bCol)
